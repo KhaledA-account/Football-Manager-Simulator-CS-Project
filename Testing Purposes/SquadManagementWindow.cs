@@ -67,118 +67,7 @@ namespace FootballManager
                     new FormationPosition("CB", 80, 14),
                     new FormationPosition("GK", 60, 17)
                 }),
-                new Formation("3-4-1-2", new List<FormationPosition>
-                {
-                    new FormationPosition("ST", 40, 3),
-                    new FormationPosition("ST", 80, 3),
-                    new FormationPosition("CAM", 60, 5),
-                    new FormationPosition("LM", 20, 7),
-                    new FormationPosition("RM", 100, 7),
-                    new FormationPosition("CM", 40, 9),
-                    new FormationPosition("CM", 80, 9),
-                    new FormationPosition("CB", 60, 12),
-                    new FormationPosition("CB", 40, 14),
-                    new FormationPosition("CB", 80, 14),
-                    new FormationPosition("GK", 60, 17)
-                }),
-                new Formation("4-5-1 Attack", new List<FormationPosition>
-                {
-                    new FormationPosition("ST", 60, 3),
-                    new FormationPosition("CAM", 40, 5),
-                    new FormationPosition("CAM", 80, 5),
-                    new FormationPosition("LM", 20, 7),
-                    new FormationPosition("CM", 60, 7),
-                    new FormationPosition("RM", 100, 7),
-                    new FormationPosition("LB", 20, 9),
-                    new FormationPosition("RB", 100, 9),
-                    new FormationPosition("CB", 40, 9),
-                    new FormationPosition("CB", 80, 9),
-                    new FormationPosition("GK", 60, 14)
-                }),
-                new Formation("4-1-2-1-2 Wide", new List<FormationPosition>
-                {
-                    new FormationPosition("ST", 40, 3),
-                    new FormationPosition("ST", 80, 3),
-                    new FormationPosition("CAM", 60, 5),
-                    new FormationPosition("LM", 20, 7),
-                    new FormationPosition("RM", 100, 7),
-                    new FormationPosition("CDM", 60, 9),
-                    new FormationPosition("LB", 20, 11),
-                    new FormationPosition("RB", 100, 11),
-                    new FormationPosition("CB", 40, 13),
-                    new FormationPosition("CB", 80, 13),
-                    new FormationPosition("GK", 60, 16)
-                }),
-                new Formation("4-1-2-1-2 Narrow", new List<FormationPosition>
-                {
-                    new FormationPosition("ST", 40, 3),
-                    new FormationPosition("ST", 80, 3),
-                    new FormationPosition("CAM", 60, 5),
-                    new FormationPosition("CM", 40, 7),
-                    new FormationPosition("CM", 80, 7),
-                    new FormationPosition("CDM", 60, 9),
-                    new FormationPosition("LB", 20, 11),
-                    new FormationPosition("RB", 100, 11),
-                    new FormationPosition("CB", 40, 13),
-                    new FormationPosition("CB", 80, 13),
-                    new FormationPosition("GK", 60, 16)
-                }),
-                new Formation("5-4-1 Flat", new List<FormationPosition>
-                {
-                    new FormationPosition("ST", 60, 3),
-                    new FormationPosition("LM", 20, 5),
-                    new FormationPosition("RM", 100, 5),
-                    new FormationPosition("CM", 40, 5),
-                    new FormationPosition("CM", 80, 5),
-                    new FormationPosition("LB", 10, 7),
-                    new FormationPosition("RB", 110, 7),
-                    new FormationPosition("CB", 30, 7),
-                    new FormationPosition("CB", 60, 9),
-                    new FormationPosition("CB", 90, 7),
-                    new FormationPosition("GK", 60, 12)
-                }),
-                new Formation("5-3-2 Holding", new List<FormationPosition>
-                {
-                    new FormationPosition("ST", 40, 3),
-                    new FormationPosition("ST", 80, 3),
-                    new FormationPosition("CM", 40, 5),
-                    new FormationPosition("CM", 80, 5),
-                    new FormationPosition("CDM", 60, 7),
-                    new FormationPosition("LB", 20, 9),
-                    new FormationPosition("CB", 40, 9),
-                    new FormationPosition("CB", 60, 11),
-                    new FormationPosition("CB", 80, 9),
-                    new FormationPosition("RB", 100, 9),
-                    new FormationPosition("GK", 60, 14)
-                }),
-                new Formation("4-2-3-1 Wide", new List<FormationPosition>
-                {
-                    new FormationPosition("ST", 60, 3),
-                    new FormationPosition("CAM", 60, 5),
-                    new FormationPosition("LM", 20, 5),
-                    new FormationPosition("RM", 100, 5),
-                    new FormationPosition("CDM", 40, 7),
-                    new FormationPosition("CDM", 80, 7),
-                    new FormationPosition("LB", 20, 9),
-                    new FormationPosition("RB", 100, 9),
-                    new FormationPosition("CB", 40, 9),
-                    new FormationPosition("CB", 80, 9),
-                    new FormationPosition("GK", 60, 12)
-                }),
-                new Formation("4-3-3 Attack", new List<FormationPosition>
-                {
-                    new FormationPosition("ST", 60, 3),
-                    new FormationPosition("LW", 20, 3),
-                    new FormationPosition("RW", 100, 3),
-                    new FormationPosition("CAM", 60, 5),
-                    new FormationPosition("CM", 40, 7),
-                    new FormationPosition("CM", 80, 7),
-                    new FormationPosition("LB", 20, 9),
-                    new FormationPosition("RB", 100, 9),
-                    new FormationPosition("CB", 40, 9),
-                    new FormationPosition("CB", 80, 9),
-                    new FormationPosition("GK", 60, 12)
-                }),
+                // Additional formations can be added here.
                 new Formation("4-4-2 Flat", new List<FormationPosition>
                 {
                     new FormationPosition("ST", 40, 3),
@@ -202,7 +91,6 @@ namespace FootballManager
 
             if (key == ConsoleKey.Escape)
             {
-                // Return to main menu
                 CurrentAction = InterfaceAction.ReturnToMainMenu;
                 return;
             }
@@ -221,7 +109,6 @@ namespace FootballManager
                 {
                     _selectedFormation = _formations[_activeFormationIndex];
                     _userTeam.SelectedFormation = _selectedFormation;
-                    // Reset position assignments
                     positionAssignments = new Dictionary<int, Player>();
                     _userTeam.PositionAssignments = positionAssignments;
                     activePositionIndex = 0;
@@ -256,7 +143,6 @@ namespace FootballManager
                 }
                 else if (key == ConsoleKey.Enter)
                 {
-                    // Assign player to position
                     string position = _selectedFormation.Positions[activePositionIndex].PositionName;
                     Player selected = SelectPlayerForPosition(position);
                     if (selected != null)
@@ -273,7 +159,6 @@ namespace FootballManager
                 }
                 else if (key == ConsoleKey.C)
                 {
-                    // Change contract
                     ChangeContract(selectedPlayer);
                 }
             }
@@ -284,19 +169,10 @@ namespace FootballManager
             if (!_visible)
                 return;
 
-            // Clear only the window area
             ClearWindowArea();
-
-            // Draw the window border and title
             base.Draw(active);
-
-            // Draw formations list
             DrawFormations();
-
-            // Draw starting 11
             DrawStarting11();
-
-            // Draw Player Information
             DrawPlayerInformation();
         }
 
@@ -315,7 +191,7 @@ namespace FootballManager
             int formationListY = _rectangle.Y + 4;
 
             Console.SetCursorPosition(formationListX, formationListY);
-            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.ForegroundColor = ConsoleColor.White;
             Console.WriteLine("Formations:");
             Console.ResetColor();
             formationListY++;
@@ -325,18 +201,18 @@ namespace FootballManager
                 Console.SetCursorPosition(formationListX, formationListY);
                 if (inFormationSelection && i == _activeFormationIndex)
                 {
+                    // Selected formation in green
                     Console.ForegroundColor = ConsoleColor.Green;
                     Console.Write($"> {_formations[i].Name}");
+                    Console.ResetColor();
                 }
                 else
                 {
                     Console.Write($"  {_formations[i].Name}");
                 }
-                Console.ResetColor();
                 formationListY++;
             }
 
-            // Instructions
             formationListY++;
             Console.SetCursorPosition(formationListX, formationListY);
             Console.WriteLine("Use Up/Down to select formation");
@@ -356,35 +232,29 @@ namespace FootballManager
             int fieldOriginX = _rectangle.X + 30;
             int fieldOriginY = _rectangle.Y + 4;
 
-            // Draw field (optional)
             DrawField(fieldOriginX, fieldOriginY);
 
-            // Draw Formation Positions
             for (int i = 0; i < _selectedFormation.Positions.Count; i++)
             {
                 var formationPosition = _selectedFormation.Positions[i];
-
-                // Calculate position within the field
-                int posX = fieldOriginX + formationPosition.XOffset / 2; // Adjust scaling if needed
+                int posX = fieldOriginX + formationPosition.XOffset / 2;
                 int posY = fieldOriginY + formationPosition.YOffset;
 
                 string positionName = formationPosition.PositionName;
                 Player assignedPlayer = positionAssignments.ContainsKey(i) ? positionAssignments[i] : null;
                 string playerName = assignedPlayer != null ? assignedPlayer.Name : "Empty";
 
-                // Highlight the active position
                 if (inStarting11Selection && i == activePositionIndex)
                 {
+                    // Active position in green
                     Console.ForegroundColor = ConsoleColor.Green;
                 }
 
                 Console.SetCursorPosition(posX, posY);
                 Console.Write($"{positionName}: {playerName}");
-
                 Console.ResetColor();
             }
 
-            // Instructions
             int instructionY = fieldOriginY + 20;
             Console.SetCursorPosition(fieldOriginX, instructionY);
             Console.WriteLine("Use Up/Down to select position");
@@ -404,7 +274,7 @@ namespace FootballManager
             int fieldWidth = 60;
             int fieldHeight = 20;
 
-            Console.ForegroundColor = ConsoleColor.DarkGreen;
+            Console.ForegroundColor = ConsoleColor.Green;
             for (int y = 0; y <= fieldHeight; y++)
             {
                 Console.SetCursorPosition(originX, originY + y);
@@ -422,7 +292,7 @@ namespace FootballManager
             int infoY = _rectangle.Y + 4;
 
             Console.SetCursorPosition(infoX, infoY);
-            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.ForegroundColor = ConsoleColor.White;
             Console.WriteLine("Player Information:");
             Console.ResetColor();
             infoY++;
@@ -457,10 +327,8 @@ namespace FootballManager
 
         private Player SelectPlayerForPosition(string position)
         {
-            // Get set of assigned players
             HashSet<Player> assignedPlayers = new HashSet<Player>(positionAssignments.Values);
 
-            // Filter players by position and exclude assigned players
             List<Player> availablePlayers = _userTeam.Players
                 .Where(p => p.Position.Contains(position) && !assignedPlayers.Contains(p))
                 .ToList();

@@ -27,7 +27,6 @@ namespace FootballManager
 
             if (key == ConsoleKey.Escape)
             {
-                // Return to main menu
                 CurrentAction = InterfaceAction.ReturnToMainMenu;
                 return;
             }
@@ -52,15 +51,12 @@ namespace FootballManager
                 {
                     var selectedPlayer = _transferListedPlayers[_selectedPlayerIndex];
 
-                    // Check if the player belongs to the user's club
                     if (selectedPlayer.CurrentClub != _userClub)
                     {
-                        // Attempt to buy player
                         BuyPlayer(selectedPlayer);
                     }
                     else
                     {
-                        // Can't buy your own player
                         Console.Clear();
                         Console.WriteLine("You cannot buy your own player.");
                         Console.WriteLine("Press any key to continue...");
@@ -72,24 +68,20 @@ namespace FootballManager
 
         public override void Draw(bool active)
         {
-            // Clear the window area only
             ClearWindowArea();
-
             base.Draw(active);
 
-            // Refresh the list of transfer-listed players
             RefreshTransferListedPlayers();
 
             int x = _rectangle.X + 2;
             int y = _rectangle.Y + 4;
 
             Console.SetCursorPosition(x, y);
-            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.ForegroundColor = ConsoleColor.White;
             Console.WriteLine("Transfer Market:");
             Console.ResetColor();
             y++;
 
-            // Draw table headers
             Console.SetCursorPosition(x, y);
             Console.WriteLine("Index  Name                Age Pos  Rating  Value   Club              Status");
             y++;
@@ -103,10 +95,10 @@ namespace FootballManager
 
                 if (i == _selectedPlayerIndex)
                 {
+                    // Selected player in green
                     Console.ForegroundColor = ConsoleColor.Green;
                 }
 
-                // Display player details with value in 'M'
                 string playerInfo = $"{indexIndicator} {i + 1,-5} {player.Name,-18} {player.Age,-3} {player.Position,-4} {player.Rating,-7} £{player.Value}M  {player.CurrentClub.Name,-16} {player.SquadStatus}";
                 if (playerInfo.Length > _rectangle.Width - 4)
                 {
@@ -125,7 +117,6 @@ namespace FootballManager
                 Console.WriteLine("No players are currently listed for transfer.".PadRight(_rectangle.Width - 4));
             }
 
-            // Instructions
             Console.SetCursorPosition(x, _rectangle.Y + _rectangle.Height - 2);
             Console.WriteLine("Use Up/Down arrows to navigate, Enter to buy, ESC to return.");
         }
@@ -141,7 +132,6 @@ namespace FootballManager
 
         private void RefreshTransferListedPlayers()
         {
-            // Include players from all clubs except the user's club
             _transferListedPlayers = _league.GetAllPlayers()
                 .Where(p => p.AvailableForTransfer && p.CurrentClub != _userClub)
                 .ToList();
@@ -159,28 +149,23 @@ namespace FootballManager
             var key = Console.ReadKey(true).Key;
             if (key == ConsoleKey.Y)
             {
-                double transferFee = player.TransferPrice * 1_000_000; // Convert to actual amount
+                double transferFee = player.TransferPrice * 1_000_000;
 
                 if (_userClub.Balance >= transferFee)
                 {
-                    // Transfer the player
                     player.CurrentClub.Players.Remove(player);
                     _userClub.Players.Add(player);
 
-                    // Update balances
                     _userClub.Balance -= transferFee;
                     player.CurrentClub.Balance += transferFee;
 
-                    // Update transfer totals
                     _userClub.TotalTransfersIn += transferFee;
                     player.CurrentClub.TotalTransfersOut += transferFee;
 
-                    // Update player's club
                     player.CurrentClub = _userClub;
                     player.AvailableForTransfer = false;
                     player.TransferPrice = 0;
 
-                    // Prompt for new contract details
                     SetNewPlayerContractDetails(player);
 
                     Console.WriteLine($"{player.Name} has joined {_userClub.Name}.");
@@ -203,7 +188,6 @@ namespace FootballManager
             Console.Clear();
             Console.WriteLine($"Set contract details for {player.Name}:");
 
-            // Set Squad Status
             Console.WriteLine("Select squad status:");
             Console.WriteLine("1. First Team Member");
             Console.WriteLine("2. Backup Player");
@@ -226,7 +210,6 @@ namespace FootballManager
                     break;
             }
 
-            // Set Contract Length
             Console.WriteLine("Enter contract length in years:");
             string lengthInput = Console.ReadLine();
             if (int.TryParse(lengthInput, out int newLength))
@@ -239,7 +222,6 @@ namespace FootballManager
                 player.ContractLength = 3;
             }
 
-            // Set Wage
             Console.WriteLine("Enter wage in K per week:");
             string wageInput = Console.ReadLine();
             if (double.TryParse(wageInput, out double newWage))

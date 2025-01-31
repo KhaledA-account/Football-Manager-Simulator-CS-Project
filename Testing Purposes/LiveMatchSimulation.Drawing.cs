@@ -6,9 +6,16 @@ namespace FootballManager
     // This file has the PARTIAL class with the drawing logic for the match simulation
     public partial class LiveMatchSimulation
     {
-        // -------------------------------------------------------------
-        // Rendering Methods
-        // -------------------------------------------------------------
+        // These fields are assumed to be defined elsewhere in the LiveMatchSimulation class:
+        // ConsoleCell[,] buffer;
+        // int ConsoleHeight, ConsoleWidth;
+        // Box liveMatchBox, settingsBox, informationBox, benchBox, startingBox;
+        // int pitchLeft, pitchTop, pitchRight, pitchBottom;
+        // int currentMinute, teamAScore, teamBScore;
+        // List<SimPlayer> teamAPlayers, teamBPlayers;
+        // List<string> settingsOptions;
+        // int settingsMenuIndex;
+        // (Other fields used in simulation and drawing as needed)
 
         /// <summary>
         /// Renders all UI components to the buffer and updates the console.
@@ -88,20 +95,28 @@ namespace FootballManager
         /// </summary>
         private void DrawPitch()
         {
-            // Draw pitch boundaries
+            // Fill the entire pitch area with green to ensure no black areas appear.
+            for (int y = pitchTop; y <= pitchBottom; y++)
+            {
+                for (int x = pitchLeft; x <= pitchRight; x++)
+                {
+                    PlaceChar(x, y, ' ', ConsoleColor.Green, ConsoleColor.Green);
+                }
+            }
+
+            // Draw pitch boundaries in green.
             for (int y = pitchTop; y <= pitchBottom; y++)
             {
                 PlaceChar(pitchLeft, y, '|', ConsoleColor.Green, ConsoleColor.Green);
                 PlaceChar(pitchRight, y, '|', ConsoleColor.Green, ConsoleColor.Green);
             }
-
             for (int x = pitchLeft; x <= pitchRight; x++)
             {
                 PlaceChar(x, pitchTop, '-', ConsoleColor.Green, ConsoleColor.Green);
                 PlaceChar(x, pitchBottom, '-', ConsoleColor.Green, ConsoleColor.Green);
             }
 
-            // Draw midfield circle or marker
+            // Draw the midfield marker (a 7x7 square with white background on green).
             int midfieldX = (pitchLeft + pitchRight) / 2;
             int centerY = (pitchTop + pitchBottom) / 2;
             for (int dy = -3; dy <= 3; dy++)
@@ -111,9 +126,13 @@ namespace FootballManager
                     PlaceChar(midfieldX + dx, centerY + dy, ' ', ConsoleColor.White, ConsoleColor.White);
                 }
             }
+            // Overwrite the very center with green to blend with the pitch.
             PlaceChar(midfieldX, centerY, ' ', ConsoleColor.Green, ConsoleColor.Green);
 
+            // Draw goals at both ends.
             DrawGoals(midfieldX, centerY);
+
+            // Draw players for both teams.
             DrawPlayers(teamAPlayers, ConsoleColor.Magenta);
             DrawPlayers(teamBPlayers, ConsoleColor.Cyan);
         }
@@ -123,12 +142,13 @@ namespace FootballManager
         /// </summary>
         private void DrawGoals(int midfieldX, int centerY)
         {
+            // Draw goals using DarkGreen to indicate goal areas.
             for (int dy = -2; dy <= 2; dy++)
             {
-                PlaceChar(pitchLeft, centerY + dy, ' ', ConsoleColor.DarkGray, ConsoleColor.DarkGray);
-                PlaceChar(pitchLeft + 1, centerY + dy, ' ', ConsoleColor.DarkGray, ConsoleColor.DarkGray);
-                PlaceChar(pitchRight - 1, centerY + dy, ' ', ConsoleColor.DarkGray, ConsoleColor.DarkGray);
-                PlaceChar(pitchRight, centerY + dy, ' ', ConsoleColor.DarkGray, ConsoleColor.DarkGray);
+                PlaceChar(pitchLeft, centerY + dy, ' ', ConsoleColor.DarkGreen, ConsoleColor.DarkGreen);
+                PlaceChar(pitchLeft + 1, centerY + dy, ' ', ConsoleColor.DarkGreen, ConsoleColor.DarkGreen);
+                PlaceChar(pitchRight - 1, centerY + dy, ' ', ConsoleColor.DarkGreen, ConsoleColor.DarkGreen);
+                PlaceChar(pitchRight, centerY + dy, ' ', ConsoleColor.DarkGreen, ConsoleColor.DarkGreen);
             }
         }
 
@@ -290,6 +310,6 @@ namespace FootballManager
             }
         }
 
-        // You can add more drawing methods as needed
+        // Additional drawing methods can be added as needed.
     }
 }

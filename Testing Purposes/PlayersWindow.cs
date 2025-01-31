@@ -30,7 +30,6 @@ namespace FootballManager
                 }
                 else
                 {
-                    // Return to main menu
                     CurrentAction = InterfaceAction.ReturnToMainMenu;
                     return;
                 }
@@ -73,9 +72,7 @@ namespace FootballManager
 
         public override void Draw(bool active)
         {
-            // Clear the window area only
             ClearWindowArea();
-
             base.Draw(active);
 
             int x = _rectangle.X + 2;
@@ -90,7 +87,6 @@ namespace FootballManager
                 DrawPlayerList(x, y);
             }
 
-            // Instructions
             Console.SetCursorPosition(x, _rectangle.Y + _rectangle.Height - 2);
             Console.WriteLine("Use Up/Down arrows to navigate, Right Arrow to view details, T to toggle transfer status, ESC to return.");
         }
@@ -98,7 +94,7 @@ namespace FootballManager
         private void DrawPlayerList(int x, int y)
         {
             Console.SetCursorPosition(x, y);
-            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.ForegroundColor = ConsoleColor.White;
             Console.WriteLine("Your Players:");
             Console.ResetColor();
             y++;
@@ -106,11 +102,11 @@ namespace FootballManager
             for (int i = 0; i < _userClub.Players.Count && y < _rectangle.Y + _rectangle.Height - 4; i++)
             {
                 Console.SetCursorPosition(x, y);
-
                 var player = _userClub.Players[i];
 
                 if (i == _selectedPlayerIndex)
                 {
+                    // Selected player in green
                     Console.ForegroundColor = ConsoleColor.Green;
                     Console.WriteLine($"> {player.Name} ({player.Position}) - Rating: {player.Rating} - Transfer Listed: {(player.AvailableForTransfer ? "Yes" : "No")}");
                     Console.ResetColor();
@@ -135,7 +131,7 @@ namespace FootballManager
             var player = _userClub.Players[_selectedPlayerIndex];
 
             Console.SetCursorPosition(x, y);
-            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.ForegroundColor = ConsoleColor.White;
             Console.WriteLine($"Name: {player.Name}");
             Console.ResetColor();
             y++;
@@ -165,7 +161,7 @@ namespace FootballManager
             y++;
 
             Console.SetCursorPosition(x, y);
-            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.ForegroundColor = ConsoleColor.White;
             Console.WriteLine("Player Statistics:");
             Console.ResetColor();
             y++;
@@ -177,7 +173,6 @@ namespace FootballManager
                 y++;
             }
 
-            // Instructions
             Console.SetCursorPosition(x, _rectangle.Y + _rectangle.Height - 2);
             Console.WriteLine("Press Left Arrow to go back, T to toggle transfer status, ESC to return.");
         }
@@ -188,7 +183,6 @@ namespace FootballManager
 
             if (player.AvailableForTransfer)
             {
-                // Prompt for transfer price
                 Console.Clear();
                 Console.WriteLine($"Enter transfer price for {player.Name} in millions:");
                 string input = Console.ReadLine();

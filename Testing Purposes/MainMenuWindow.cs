@@ -42,7 +42,6 @@ namespace FootballManager
         {
             var key = UserInterface.Input.Key;
 
-            // Spacebar toggles daily simulation
             if (key == ConsoleKey.Spacebar)
             {
                 isSimulating = !isSimulating;
@@ -50,14 +49,12 @@ namespace FootballManager
 
             if (isSimulating)
             {
-                // Simulate one day
                 _currentDate = _currentDate.AddDays(1);
                 _league.CurrentDate = _currentDate;
                 ProcessDailyEvents();
             }
             else
             {
-                // Not simulating – normal menu navigation
                 if (key == ConsoleKey.UpArrow)
                 {
                     _activeMenuIndex = (_activeMenuIndex - 1 + _menuOptions.Count) % _menuOptions.Count;
@@ -75,12 +72,9 @@ namespace FootballManager
 
         public override void Draw(bool active)
         {
-            // Clear the window area only
             ClearWindowArea();
-
             base.Draw(active);
 
-            // Draw main menu, finances, recent transfers, etc.
             DrawMenu();
             DrawCurrentBalanceAndDate();
             DrawRecentTransfers();
@@ -88,11 +82,10 @@ namespace FootballManager
             DrawFinances();
             DrawRecentAndUpcomingFixtures();
 
-            // Indicate simulation state
             if (isSimulating)
             {
                 Console.SetCursorPosition(_rectangle.X + _rectangle.Width - 20, _rectangle.Y + 1);
-                Console.ForegroundColor = ConsoleColor.Red;
+                Console.ForegroundColor = ConsoleColor.White;
                 Console.Write("Simulating...");
                 Console.ResetColor();
             }
@@ -124,40 +117,32 @@ namespace FootballManager
                     break;
             }
         }
-        /// <summary>
-        /// Called each time we simulate a day if isSimulating == true.
-        /// This is where we handle daily events (transfers, listings, match days, etc.).
-        /// </summary>
+
         private void ProcessDailyEvents()
         {
             Random rnd = new Random();
 
-            // Transfer & listing probabilities
             double transferProbability = 0.3;
             double listingProbability = 0.3;
 
             var clubs = _league.Clubs;
 
-            // Simulate possible random transfers
             if (rnd.NextDouble() < transferProbability)
             {
                 SimulateRandomTransfer(rnd);
             }
 
-            // Simulate possible random listing
             if (rnd.NextDouble() < listingProbability)
             {
                 SimulateRandomListing(rnd);
             }
 
-            // Update weekly finances every 7 days
             if ((_currentDate - _userClub.LastFinanceUpdateDate).Days >= 7)
             {
                 UpdateWeeklyFinances();
                 _userClub.LastFinanceUpdateDate = _currentDate;
             }
 
-            // Check if the season ended
             if (_league.CurrentDate > _league.SeasonEndDate)
             {
                 _league.StartNewSeason();
@@ -167,20 +152,16 @@ namespace FootballManager
                 Console.ReadKey(true);
             }
 
-            // Check for fixtures today
             var todaysFixtures = _league.Fixtures
                 .Where(f => f.Date.Date == _league.CurrentDate.Date && !f.Played)
                 .ToList();
 
-            // Is user’s club playing today?
             var userFixture = todaysFixtures.FirstOrDefault(f =>
                 f.HomeTeam == _userClub || f.AwayTeam == _userClub);
 
             if (userFixture != null)
             {
-                // Pause sim
                 isSimulating = false;
-
                 Console.Clear();
                 var opponentName = (userFixture.HomeTeam == _userClub)
                     ? userFixture.AwayTeam.Name
@@ -192,17 +173,14 @@ namespace FootballManager
 
                 if (input == ConsoleKey.Y)
                 {
-                    // Call the new LiveMatchSimulation class instead
                     Program.StartNoNullSimulation(userFixture, _league, _userClub);
                 }
                 else
                 {
-                    // Quick auto-resolve
                     SimulateQuickMatch(userFixture);
                 }
             }
 
-            // Auto-resolve all other fixtures not involving the user
             foreach (var fix in todaysFixtures)
             {
                 if (!fix.Played && fix != userFixture)
@@ -215,7 +193,7 @@ namespace FootballManager
         private void SimulateRandomListing(Random rnd)
         {
             var clubs = _league.Clubs
-                .Where(c => c != _userClub && c.Players.Count > 0) // exclude user’s club for listing
+                .Where(c => c != _userClub && c.Players.Count > 0)
                 .ToList();
 
             if (clubs.Count == 0) return;
@@ -226,7 +204,6 @@ namespace FootballManager
             var player = club.Players[rnd.Next(club.Players.Count)];
             if (player.AvailableForTransfer) return;
 
-            // random price
             double minPrice = player.Value * 0.8;
             double maxPrice = player.Value * 1.2;
             double transferPrice = Math.Round(minPrice + rnd.NextDouble() * (maxPrice - minPrice), 2);
@@ -264,11 +241,10 @@ namespace FootballManager
 
             var player = availablePlayers[rnd.Next(availablePlayers.Count)];
             double fee = player.TransferPrice;
-            double transferFee = fee * 1_000_000; // actual amount
+            double transferFee = fee * 1_000_000;
 
             if (toClub.Balance < transferFee) return;
 
-            // Transfer
             fromClub.Players.Remove(player);
             toClub.Players.Add(player);
             player.CurrentClub = toClub;
@@ -305,7 +281,6 @@ namespace FootballManager
             fixture.AwayGoals = awayGoals;
             fixture.Score = $"{homeGoals} : {awayGoals}";
 
-            // Update league table
             var homeStats = fixture.HomeTeam.Stats;
             var awayStats = fixture.AwayTeam.Stats;
             homeStats.GoalsFor += homeGoals;
@@ -356,7 +331,7 @@ namespace FootballManager
             int menuY = _rectangle.Y + 4;
 
             Console.SetCursorPosition(menuX, menuY);
-            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.ForegroundColor = ConsoleColor.White;
             Console.WriteLine("Menu:");
             Console.ResetColor();
             menuY++;
@@ -366,6 +341,7 @@ namespace FootballManager
                 Console.SetCursorPosition(menuX, menuY + i);
                 if (i == _activeMenuIndex)
                 {
+                    // Selected menu item in green
                     Console.ForegroundColor = ConsoleColor.Green;
                     Console.WriteLine($"> {_menuOptions[i]}");
                     Console.ResetColor();
@@ -382,7 +358,6 @@ namespace FootballManager
             int balanceX = _rectangle.X + 30;
             int balanceY = _rectangle.Y + 4;
 
-            // Current Balance
             Console.SetCursorPosition(balanceX, balanceY);
             Console.WriteLine("+------------------------+");
             balanceY++;
@@ -398,7 +373,6 @@ namespace FootballManager
             Console.SetCursorPosition(balanceX, balanceY);
             Console.WriteLine("+------------------------+");
 
-            // Date
             balanceY += 2;
             Console.SetCursorPosition(balanceX, balanceY);
             Console.WriteLine("+------------------------+");
@@ -425,7 +399,6 @@ namespace FootballManager
             int transferY = _rectangle.Y + 15;
 
             Console.SetCursorPosition(transferX, transferY);
-            Console.ForegroundColor = ConsoleColor.Cyan;
             Console.WriteLine("+------------------ Recent Transfers ------------------+");
             transferY++;
 
@@ -459,7 +432,6 @@ namespace FootballManager
             int listingY = _rectangle.Y + 25;
 
             Console.SetCursorPosition(listingX, listingY);
-            Console.ForegroundColor = ConsoleColor.Cyan;
             Console.WriteLine("+------------------ Recent Listings -------------------+");
             listingY++;
 
@@ -493,7 +465,6 @@ namespace FootballManager
             int financeY = _rectangle.Y + 4;
 
             Console.SetCursorPosition(financeX, financeY);
-            Console.ForegroundColor = ConsoleColor.Cyan;
             Console.WriteLine("+------------------- Finances -------------------+");
             financeY++;
             Console.SetCursorPosition(financeX, financeY);
@@ -518,11 +489,9 @@ namespace FootballManager
             int fixturesY = _rectangle.Y + 15;
 
             Console.SetCursorPosition(fixturesX, fixturesY);
-            Console.ForegroundColor = ConsoleColor.Cyan;
             Console.WriteLine("+--------- Recent & Upcoming Fixtures ----------+");
             fixturesY++;
 
-            // Recent
             var allClubFixtures = _league.Fixtures
                 .Where(f => f.HomeTeam == _userClub || f.AwayTeam == _userClub)
                 .OrderBy(f => f.Date)
@@ -547,48 +516,9 @@ namespace FootballManager
                 {
                     Console.SetCursorPosition(fixturesX, fixturesY);
                     string text = $"{fix.Date:dd MMM} ";
-                    if (fix.HomeTeam == _userClub) text += "(H) ";
-                    else text += "(A) ";
-
+                    text += (fix.HomeTeam == _userClub) ? "(H) " : "(A) ";
                     text += $"{fix.HomeTeam.Name} vs {fix.AwayTeam.Name} ";
                     text += $"({fix.HomeGoals}:{fix.AwayGoals})";
-
-                    if (text.Length > 44)
-                        text = text.Substring(0, 41) + "...";
-
-                    Console.WriteLine($"| {text}".PadRight(46) + "|");
-                    fixturesY++;
-                }
-            }
-
-            // divider
-            Console.SetCursorPosition(fixturesX, fixturesY);
-            Console.WriteLine("|----------------------------------------------|");
-            fixturesY++;
-
-            // Upcoming
-            var upcoming = allClubFixtures
-                .Where(f => f.Date >= _league.CurrentDate && !f.Played)
-                .OrderBy(f => f.Date)
-                .Take(3)
-                .ToList();
-
-            if (upcoming.Count == 0)
-            {
-                Console.SetCursorPosition(fixturesX, fixturesY);
-                Console.WriteLine("| No upcoming fixtures".PadRight(46) + "|");
-                fixturesY++;
-            }
-            else
-            {
-                foreach (var fix in upcoming)
-                {
-                    Console.SetCursorPosition(fixturesX, fixturesY);
-                    string text = $"{fix.Date:dd MMM} ";
-                    if (fix.HomeTeam == _userClub) text += "(H) ";
-                    else text += "(A) ";
-
-                    text += $"{fix.HomeTeam.Name} vs {fix.AwayTeam.Name} - TBD";
 
                     if (text.Length > 44)
                         text = text.Substring(0, 41) + "...";

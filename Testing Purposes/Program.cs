@@ -17,7 +17,6 @@ namespace FootballManager
             Console.BackgroundColor = ConsoleColor.Black;
             Console.Clear(); // Apply background color to entire console
 
-            // Try resizing
             try
             {
                 Console.SetWindowSize(120, 40);
@@ -25,14 +24,16 @@ namespace FootballManager
             }
             catch
             {
-                // ignore if not supported
+                // Ignore if not supported
             }
 
             Console.ResetColor();
+            Console.CursorVisible = false;
 
+            // Create the league (ensure League.cs and other required files are in the project)
             League league = new League();
 
-            // Club selection
+            // Club selection screen
             int selectedClubIndex = 0;
             ConsoleKey key;
 
@@ -70,7 +71,7 @@ namespace FootballManager
 
             Club userClub = league.Clubs[selectedClubIndex];
 
-            // Initialize windows
+            // Initialize all game windows
             MainMenuWindow mainMenu = new MainMenuWindow(userClub, league, "Main Menu", new Rectangle(0, 0, 120, 40), true);
             LeagueTableWindow leagueTableWindow = new LeagueTableWindow(league, "League Table", new Rectangle(0, 0, 120, 40), false, userClub);
             SquadManagementWindow squadManagementWindow = new SquadManagementWindow(userClub, "Squad Management", new Rectangle(0, 0, 120, 40), false);
@@ -87,13 +88,13 @@ namespace FootballManager
 
             Window currentWindow = mainMenu;
 
+            // Main game loop (approximately 30 FPS)
             while (true)
             {
                 UserInterface.ReadInput();
                 currentWindow.Update();
                 currentWindow.Draw(true);
 
-                // Handle window switching
                 if (currentWindow.CurrentAction != InterfaceAction.None)
                 {
                     // Hide all windows
@@ -102,6 +103,7 @@ namespace FootballManager
                         window.SetVisibility(false);
                     }
 
+                    // Switch to the appropriate window based on the action
                     switch (currentWindow.CurrentAction)
                     {
                         case InterfaceAction.ViewTable:
@@ -130,20 +132,16 @@ namespace FootballManager
                     currentWindow.CurrentAction = InterfaceAction.None;
                 }
 
-                Thread.Sleep(50);
+                // Sleep for approximately 33ms (~30 FPS) for smooth updates
+                Thread.Sleep(30);
             }
         }
 
-        /// <summary>
-        /// Previously referenced "NoNullFootballSimulation". 
-        /// We now call the new "LiveMatchSimulation" class instead.
-        /// </summary>
+        // Called to start the live match simulation
         public static void StartNoNullSimulation(Fixture fixture, League league, Club userClub)
         {
-            // Launch the partial-based "LiveMatchSimulation"
             var simulation = new LiveMatchSimulation(fixture, league, userClub);
             simulation.StartSimulation();
-            // Once done, the final result is in 'fixture' and the league table is updated.
         }
 
         public static void AddWindow(Window window)

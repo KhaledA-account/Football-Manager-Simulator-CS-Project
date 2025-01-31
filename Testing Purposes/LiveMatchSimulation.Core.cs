@@ -5,10 +5,12 @@ using System.Linq;
 
 namespace FootballManager
 {
-    // This file has the PARTIAL class with the core logic for the match simulation
+    // This file contains the core logic for the live match simulation.
+    // In this redesigned version, A* pathfinding is used for dynamic player movement,
+    // and the simulation is structured to update game state separately from drawing.
     public partial class LiveMatchSimulation
     {
-        // --- Fields referencing your real game classes ---
+        // --- Fields referencing your game classes ---
         private Fixture _fixture;
         private League _league;
         private Club _userClub;
@@ -16,8 +18,6 @@ namespace FootballManager
         // --- Console / UI dimensions ---
         private const int ConsoleWidth = 150;
         private const int ConsoleHeight = 40;
-
-        // We'll create this array in the constructor; the drawing half will use it
         private ConsoleCell[,] buffer;
 
         // --- UI boxes (defined in the constructor) ---
@@ -92,7 +92,7 @@ namespace FootballManager
             isTeamAAttackingRight = true;
 
             currentMinute = 0;
-            gameSpeed = 100; // 1..300 range
+            gameSpeed = 100; // Range 1..300 (adjustable)
             teamAScore = 0;
             teamBScore = 0;
 
@@ -143,24 +143,28 @@ namespace FootballManager
         private void InitializeTeams()
         {
             randomGenerator = new Random();
+            teamAPlayers = new List<SimPlayer>();
+            teamBPlayers = new List<SimPlayer>();
 
-            // Initialize Team A Players
-            teamAPlayers = new List<SimPlayer>
+            // Create 11 players for each team
+            for (int i = 0; i < 11; i++)
             {
-                new SimPlayer("A1", 10, 5, true, 0.6),
-                new SimPlayer("A2", 15, 8, false, 0.7),
-                // Add more players as needed
-            };
+                // For Team A, place players randomly in the left half of the pitch
+                int xA = randomGenerator.Next(pitchLeft, (pitchLeft + pitchRight) / 2);
+                int yA = randomGenerator.Next(pitchTop, pitchBottom);
+                bool isGK_A = (i == 0);
+                double skillA = 0.6 + randomGenerator.NextDouble() * 0.2;
+                teamAPlayers.Add(new SimPlayer($"A{i + 1}", xA, yA, isGK_A, skillA));
 
-            // Initialize Team B Players
-            teamBPlayers = new List<SimPlayer>
-            {
-                new SimPlayer("B1", 70, 5, true, 0.6),
-                new SimPlayer("B2", 65, 8, false, 0.7),
-                // Add more players as needed
-            };
+                // For Team B, place players in the right half
+                int xB = randomGenerator.Next((pitchLeft + pitchRight) / 2, pitchRight);
+                int yB = randomGenerator.Next(pitchTop, pitchBottom);
+                bool isGK_B = (i == 0);
+                double skillB = 0.6 + randomGenerator.NextDouble() * 0.2;
+                teamBPlayers.Add(new SimPlayer($"B{i + 1}", xB, yB, isGK_B, skillB));
+            }
 
-            // Assign the ball to a player (e.g., the first player of Team A)
+            // Initially, assign the ball to the first player of Team A.
             if (teamAPlayers.Count > 0)
             {
                 AssignBallToPlayer(teamAPlayers[0]);
@@ -214,20 +218,21 @@ namespace FootballManager
         }
 
         // -------------------------------------------------------------
-        // Simulation logic methods (no direct console drawing)
+        // Simulation logic methods
         // -------------------------------------------------------------
         private bool IsMatchSettingsActive()
         {
-            return (currentMainSection == MainMenuSection.MatchSettings &&
-                    currentSubMenu == MatchSettingsSubMenu.None);
+            return currentMainSection == MainMenuSection.MatchSettings &&
+                   currentSubMenu == MatchSettingsSubMenu.None;
         }
 
         private bool IsLiveMatchActive()
         {
-            return (currentMainSection == MainMenuSection.LiveMatch &&
-                    currentSubMenu == MatchSettingsSubMenu.None);
+            return currentMainSection == MainMenuSection.LiveMatch &&
+                   currentSubMenu == MatchSettingsSubMenu.None;
         }
 
+        // Main simulation tick – updates game state (player movement, ball actions, etc.)
         private void SimulateTick()
         {
             if (currentMinute >= 90)
@@ -243,79 +248,151 @@ namespace FootballManager
 
             currentMinute++;
 
-            bool[,] occupiedPositions = GetOccupiedPositions();
+            // Create an occupancy grid for pathfinding.
+            bool[,] occupied = GetOccupiedPositions();
 
-            var ballHolder = GetBallHolder();
-            int ballX = -1;
-            int ballY = -1;
-            if (ballHolder != null)
+            // Determine current ball holder; if none, assign it to a random player.
+            SimPlayer ballHolder = GetBallHolder();
+            if (ballHolder == null)
             {
-                ballX = ballHolder.XPosition;
-                ballY = ballHolder.YPosition;
+                ballHolder = teamAPlayers.Concat(teamBPlayers)
+                                         .OrderBy(p => CalculateDistance(p.XPosition, p.YPosition, pitchLeft, pitchTop))
+                                         .First();
+                AssignBallToPlayer(ballHolder);
             }
 
-            UpdateTeamPositions(teamAPlayers, occupiedPositions, ballX, ballY, isTeamAAttackingRight);
-            UpdateTeamPositions(teamBPlayers, occupiedPositions, ballX, ballY, !isTeamAAttackingRight);
+            // Update positions of players using A* pathfinding.
+            UpdateTeamPositions(teamAPlayers, occupied, ballHolder.XPosition, ballHolder.YPosition, isTeamAAttackingRight);
+            UpdateTeamPositions(teamBPlayers, occupied, ballHolder.XPosition, ballHolder.YPosition, !isTeamAAttackingRight);
 
-            if (ballHolder != null)
-            {
-                AttemptTackle(ballHolder);
-            }
-
-            if (ballHolder != null && !isPaused)
+            // Let the ball holder perform an action (pass, shoot, or dribble) based on probabilities.
+            if (!isPaused)
             {
                 PerformPlayerAction(ballHolder);
             }
+        }
 
-            // If no one holds the ball, assign it to the closest player
-            if (GetBallHolder() == null && ballX >= 0 && ballY >= 0)
+        // -------------------------------------------------------------
+        // A* Pathfinding Implementation
+        // -------------------------------------------------------------
+        private List<(int x, int y)> FindPathAStar(int startX, int startY, int targetX, int targetY, bool[,] occupied)
+        {
+            var openList = new List<Node>();
+            var closedSet = new HashSet<(int, int)>();
+
+            Node startNode = new Node(startX, startY, null, 0, Heuristic(startX, startY, targetX, targetY));
+            openList.Add(startNode);
+
+            while (openList.Count > 0)
             {
-                SimPlayer closestPlayer = FindClosestPlayer(ballX, ballY);
-                if (closestPlayer != null)
+                // Get node with lowest f score.
+                openList = openList.OrderBy(n => n.f).ToList();
+                Node current = openList[0];
+                openList.RemoveAt(0);
+                closedSet.Add((current.x, current.y));
+
+                if (current.x == targetX && current.y == targetY)
                 {
-                    AssignBallToPlayer(closestPlayer);
+                    // Reconstruct path.
+                    var path = new List<(int x, int y)>();
+                    Node node = current;
+                    while (node.parent != null)
+                    {
+                        path.Add((node.x, node.y));
+                        node = node.parent;
+                    }
+                    path.Reverse();
+                    return path;
                 }
+
+                foreach (var (dx, dy) in new (int, int)[] { (0, -1), (0, 1), (-1, 0), (1, 0) })
+                {
+                    int nx = current.x + dx;
+                    int ny = current.y + dy;
+
+                    if (!IsPositionWithinPitch(nx, ny))
+                        continue;
+                    int gridX = nx - pitchLeft;
+                    int gridY = ny - pitchTop;
+                    if (occupied[gridY, gridX])
+                        continue;
+                    if (closedSet.Contains((nx, ny)))
+                        continue;
+
+                    double gCost = current.g + 1;
+                    double hCost = Heuristic(nx, ny, targetX, targetY);
+                    Node neighbor = new Node(nx, ny, current, gCost, hCost);
+
+                    // If a node with the same coordinates and a lower f already exists, skip.
+                    if (openList.Any(n => n.x == nx && n.y == ny && n.f <= neighbor.f))
+                        continue;
+
+                    openList.Add(neighbor);
+                }
+            }
+
+            // No path found.
+            return new List<(int x, int y)>();
+        }
+
+        private double Heuristic(int x, int y, int targetX, int targetY)
+        {
+            // Using Manhattan distance for simplicity.
+            return Math.Abs(x - targetX) + Math.Abs(y - targetY);
+        }
+
+        private class Node
+        {
+            public int x;
+            public int y;
+            public Node parent;
+            public double g;
+            public double h;
+            public double f => g + h;
+            public Node(int x, int y, Node parent, double g, double h)
+            {
+                this.x = x;
+                this.y = y;
+                this.parent = parent;
+                this.g = g;
+                this.h = h;
             }
         }
 
-        private void HandleHalfTime()
+        // -------------------------------------------------------------
+        // Updated Player Movement using A* Pathfinding
+        // -------------------------------------------------------------
+        private void UpdateTeamPositions(List<SimPlayer> team, bool[,] occupied, int ballX, int ballY, bool attackingRight)
         {
-            isPaused = true;
-            Console.Clear();
-            Console.SetCursorPosition(50, 15);
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.WriteLine("=== HALF-TIME ===");
-            Console.SetCursorPosition(50, 17);
-            Console.WriteLine("Press any key to begin second half...");
-            Console.ResetColor();
-            Console.ReadKey(true);
-
-            SwitchAttackingDirection();
-            MirrorTeams();
-
-            isFirstHalf = false;
-            currentMinute = 45;
-            isPaused = false;
-        }
-
-        private void SwitchAttackingDirection()
-        {
-            isTeamAAttackingRight = !isTeamAAttackingRight;
-        }
-
-        private void MirrorTeams()
-        {
-            MirrorTeamPositions(teamAPlayers);
-            MirrorTeamPositions(teamBPlayers);
-        }
-
-        private void MirrorTeamPositions(List<SimPlayer> team)
-        {
-            int centerX = (pitchLeft + pitchRight) / 2;
-            foreach (var p in team)
+            if (team == null)
             {
-                int dx = p.XPosition - centerX;
-                p.XPosition = centerX - dx;
+                Console.WriteLine("[DEBUG] UpdateTeamPositions called with null 'team'??");
+                return;
+            }
+
+            foreach (var player in team)
+            {
+                if (!player.HasBall && !player.IsGoalkeeper)
+                {
+                    UnmarkPositionAsOccupied(occupied, player.XPosition, player.YPosition);
+
+                    // Determine a dynamic target position.
+                    int targetX = attackingRight ? pitchRight : pitchLeft;
+                    // Allow some vertical variation for natural movement.
+                    int targetY = player.YPosition + randomGenerator.Next(-1, 2);
+
+                    // Use A* to compute the path.
+                    var path = FindPathAStar(player.XPosition, player.YPosition, targetX, targetY, occupied);
+
+                    if (path.Count > 0)
+                    {
+                        var nextStep = path[0];
+                        player.XPosition = nextStep.x;
+                        player.YPosition = nextStep.y;
+                    }
+
+                    MarkPositionAsOccupied(occupied, player.XPosition, player.YPosition);
+                }
             }
         }
 
@@ -362,114 +439,9 @@ namespace FootballManager
             return null;
         }
 
-        /// <summary>
-        /// Updates the positions of players in a team based on BFS pathfinding towards the attacking direction.
-        private void UpdateTeamPositions(
-            List<SimPlayer> team,
-            bool[,] occupied,
-            int ballX,
-            int ballY,
-            bool attackingRight)
-        {
-            if (team == null)
-            {
-                Console.WriteLine("[DEBUG] UpdateTeamPositions called with null 'team'??");
-                return;
-            }
-
-            foreach (var player in team)
-            {
-                if (!player.HasBall && !player.IsGoalkeeper)
-                {
-                    UnmarkPositionAsOccupied(occupied, player.XPosition, player.YPosition);
-
-                    // Determine target position based on attacking direction
-                    int targetX = attackingRight ? pitchRight : pitchLeft;
-                    int targetY = player.YPosition; // Keep Y the same for straightforward attacking
-
-                    // Find path using BFS
-                    var path = FindPath(player.XPosition, player.YPosition, targetX, targetY, occupied);
-
-                    if (path.Count > 0)
-                    {
-                        var nextStep = path[0];
-                        player.XPosition = nextStep.x;
-                        player.YPosition = nextStep.y;
-                    }
-
-                    MarkPositionAsOccupied(occupied, player.XPosition, player.YPosition);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Finds the shortest path from (startX, startY) to (targetX, targetY) using BFS.
-        private List<(int x, int y)> FindPath(int startX, int startY, int targetX, int targetY, bool[,] occupied)
-        {
-            var path = new List<(int x, int y)>();
-            var visited = new HashSet<(int x, int y)>();
-            var queue = new Queue<(int x, int y)>();
-            var parents = new Dictionary<(int x, int y), (int x, int y)>();
-
-            var start = (startX, startY);
-            var target = (targetX, targetY);
-
-            queue.Enqueue(start);
-            visited.Add(start);
-
-            // Directions: Up, Down, Left, Right
-            var directions = new (int dx, int dy)[]
-            {
-                (0, -1), // Up
-                (0, 1),  // Down
-                (-1, 0), // Left
-                (1, 0)   // Right
-            };
-
-            while (queue.Count > 0)
-            {
-                var current = queue.Dequeue();
-
-                if (current == target)
-                {
-                    // Reconstruct path
-                    var temp = current;
-                    while (parents.ContainsKey(temp))
-                    {
-                        path.Add(temp);
-                        temp = parents[temp];
-                    }
-                    path.Reverse();
-                    return path;
-                }
-
-                foreach (var (dx, dy) in directions)
-                {
-                    int newX = current.x + dx;
-                    int newY = current.y + dy;
-                    var neighbor = (newX, newY);
-
-                    // Check boundaries
-                    if (!IsPositionWithinPitch(newX, newY))
-                        continue;
-
-                    // Check if occupied or already visited
-                    if (occupied[newY - pitchTop, newX - pitchLeft] || visited.Contains(neighbor))
-                        continue;
-
-                    queue.Enqueue(neighbor);
-                    visited.Add(neighbor);
-                    parents[neighbor] = current;
-                }
-            }
-
-            // No path found
-            return path;
-        }
-
-        /// <summary>
-        /// Attempts a tackle on the player holding the ball.
-        /// </summary>
+        // -------------------------------------------------------------
+        // Ball and Player Actions
+        // -------------------------------------------------------------
         private void AttemptTackle(SimPlayer holder)
         {
             var allies = teamAPlayers.Contains(holder) ? teamAPlayers : teamBPlayers;
@@ -493,10 +465,10 @@ namespace FootballManager
                 }
             }
         }
-        /// Performs an action (pass, shot, dribble) for the player holding the ball.
-        /// </summary>
+
         private void PerformPlayerAction(SimPlayer player)
         {
+            // Decide on an action based on a random chance.
             int actionChance = randomGenerator.Next(100);
             if (actionChance < 10)
             {
@@ -506,9 +478,9 @@ namespace FootballManager
             {
                 AttemptShot(player);
             }
-            // Else, the player dribbles (no action needed)
+            // Else: dribble (movement continues naturally)
         }
-        /// <param name="passer">The player attempting to pass.</param>
+
         private void AttemptPass(SimPlayer passer)
         {
             var sameTeam = teamAPlayers.Contains(passer) ? teamAPlayers : teamBPlayers;
@@ -517,7 +489,8 @@ namespace FootballManager
             if (potentialTargets.Count == 0)
                 return;
 
-            var target = potentialTargets[randomGenerator.Next(potentialTargets.Count)];
+            // Choose the best target (e.g., the nearest one)
+            SimPlayer target = potentialTargets.OrderBy(p => CalculateDistance(passer.XPosition, passer.YPosition, p.XPosition, p.YPosition)).First();
             bool isStolen;
             AnimatePass(passer.XPosition, passer.YPosition, target.XPosition, target.YPosition, out isStolen);
 
@@ -526,15 +499,15 @@ namespace FootballManager
                 AssignBallToPlayer(target);
             }
         }
-        /// Animates the pass between two players and checks for interception.
+
         private void AnimatePass(int sx, int sy, int ex, int ey, out bool isStolen)
         {
             isStolen = false;
             int steps = 10;
             double dx = (ex - sx) / (double)steps;
             double dy = (ey - sy) / (double)steps;
-            double ballX = sx;
-            double ballY = sy;
+            double currentX = sx;
+            double currentY = sy;
 
             // Remove the ball from all players during the pass
             foreach (var p in teamAPlayers) p.HasBall = false;
@@ -542,22 +515,21 @@ namespace FootballManager
 
             for (int step = 1; step <= steps; step++)
             {
-                ballX += dx;
-                ballY += dy;
-                int cbx = (int)Math.Round(ballX);
-                int cby = (int)Math.Round(ballY);
+                currentX += dx;
+                currentY += dy;
+                int posX = (int)Math.Round(currentX);
+                int posY = (int)Math.Round(currentY);
 
-                if (CheckInterception(cbx, cby))
+                if (CheckInterception(posX, posY))
                 {
                     isStolen = true;
-                    var interceptor = FindClosestOpponent(cbx, cby);
+                    var interceptor = FindClosestOpponent(posX, posY);
                     if (interceptor != null)
                         AssignBallToPlayer(interceptor);
                     return;
                 }
 
-                // The actual "DrawBallAt" method is in the partial drawing file
-                DrawBallAt(cbx, cby);
+                DrawBallAt(posX, posY);
 
                 if (isPaused)
                     break;
@@ -566,7 +538,7 @@ namespace FootballManager
                 Thread.Sleep(sleepTime);
             }
         }
-        /// Attempts to take a shot on goal with a chance to score.
+
         private void AttemptShot(SimPlayer shooter)
         {
             // Remove the ball from all players during the shot
@@ -581,13 +553,8 @@ namespace FootballManager
                 else
                     teamBScore++;
             }
-            // If the shot misses, no score is added
         }
 
-        /// <summary>
-        /// Assigns the ball to a specific player and removes it from others.
-        /// </summary>
-        /// <param name="newHolder">The player to assign the ball to.</param>
         private void AssignBallToPlayer(SimPlayer newHolder)
         {
             foreach (var p in teamAPlayers) p.HasBall = false;
@@ -595,9 +562,6 @@ namespace FootballManager
             newHolder.HasBall = true;
         }
 
-        /// <summary>
-        /// Ends the match and displays the final score.
-        /// </summary>
         private void EndMatch()
         {
             Console.Clear();
@@ -648,7 +612,7 @@ namespace FootballManager
         }
 
         // -------------------------------------------------------------
-        // Input handling
+        // Input Handling
         // -------------------------------------------------------------
         private void HandleUserInput()
         {
@@ -695,17 +659,17 @@ namespace FootballManager
                 {
                     settingsMenuIndex--;
                     if (settingsMenuIndex < 0)
-                        settingsMenuIndex = settingsOptions.Count - 1; // Wrap around to the last option
+                        settingsMenuIndex = settingsOptions.Count - 1;
                 }
                 else if (keyInfo.Key == ConsoleKey.DownArrow)
                 {
                     settingsMenuIndex++;
                     if (settingsMenuIndex >= settingsOptions.Count)
-                        settingsMenuIndex = 0; // Wrap around to the first option
+                        settingsMenuIndex = 0;
                 }
                 else if (keyInfo.Key == ConsoleKey.Enter)
                 {
-                    SelectSettingsOption(); // Open the selected settings sub-menu
+                    SelectSettingsOption();
                 }
             }
         }
@@ -718,7 +682,7 @@ namespace FootballManager
                 return;
             }
 
-            SimPlayer userPlayer = teamAPlayers[0]; // Assuming the first player is controlled by the user
+            SimPlayer userPlayer = teamAPlayers[0]; // Assume user controls the first player
             switch (keyInfo.Key)
             {
                 case ConsoleKey.W:
@@ -735,7 +699,7 @@ namespace FootballManager
                     break;
             }
 
-            ClampPlayerPosition(userPlayer); // Ensure the player stays within the pitch
+            ClampPlayerPosition(userPlayer);
         }
 
         private void ClampPlayerPosition(SimPlayer player)
@@ -750,15 +714,15 @@ namespace FootballManager
         {
             if (keyInfo.Key == ConsoleKey.Escape)
             {
-                currentSubMenu = MatchSettingsSubMenu.None; // Close the sub-menu
+                currentSubMenu = MatchSettingsSubMenu.None;
                 return;
             }
 
             if (currentSubMenu == MatchSettingsSubMenu.GameSpeed && keyInfo.Key == ConsoleKey.E)
             {
-                IncreaseGameSpeed(); // Increase game speed when 'E' is pressed
+                IncreaseGameSpeed();
             }
-            // Additional sub-menu actions can be handled here
+            // Additional submenu handling can be added here.
         }
 
         private void IncreaseGameSpeed()
@@ -800,12 +764,6 @@ namespace FootballManager
             }
         }
 
-        /// <summary>
-        /// Finds the closest player to a given position on the pitch.
-        /// </summary>
-        /// <param name="x">X position.</param>
-        /// <param name="y">Y position.</param>
-        /// <returns>The closest player or null if no players are present.</returns>
         private SimPlayer FindClosestPlayer(int x, int y)
         {
             SimPlayer closestPlayer = null;
@@ -833,69 +791,12 @@ namespace FootballManager
 
             return closestPlayer;
         }
-        /// Calculates the Euclidean distance between two points.
+
         private double CalculateDistance(int x1, int y1, int x2, int y2)
         {
             return Math.Sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2));
         }
 
-        // -------------------------------------------------------------
-        // Added Missing Methods to Resolve Compilation Errors
-        // -------------------------------------------------------------
-
-        /// <summary>
-        /// Checks if the given (x, y) position is within the pitch boundaries.
-        /// </summary>
-        /// <param name="x">X position to check.</param>
-        /// <param name="y">Y position to check.</param>
-        /// <returns>True if within pitch; otherwise, false.</returns>
-        private bool IsPositionWithinPitch(int x, int y)
-        {
-            return x >= pitchLeft && x <= pitchRight && y >= pitchTop && y <= pitchBottom;
-        }
-
-        /// <summary>
-        /// Checks if a pass at the given (x, y) position can be intercepted by an opponent.
-        /// </summary>
-        /// <param name="x">X position of the ball during the pass.</param>
-        /// <param name="y">Y position of the ball during the pass.</param>
-        /// <returns>True if the pass is intercepted; otherwise, false.</returns>
-        private bool CheckInterception(int x, int y)
-        {
-            var ballHolder = GetBallHolder();
-            if (ballHolder == null)
-                return false;
-
-            var allies = teamAPlayers.Contains(ballHolder) ? teamAPlayers : teamBPlayers;
-            var opponents = (allies == teamAPlayers) ? teamBPlayers : teamAPlayers;
-
-            foreach (var opp in opponents)
-            {
-                if (!opp.IsGoalkeeper)
-                {
-                    int dx = opp.XPosition - x;
-                    int dy = opp.YPosition - y;
-                    double distance = Math.Sqrt(dx * dx + dy * dy);
-                    if (distance <= 2) // interception range, adjustable
-                    {
-                        double interceptionChance = opp.SkillLevel * 0.5; // example formula
-                        if (randomGenerator.NextDouble() < interceptionChance)
-                        {
-                            return true;
-                        }
-                    }
-                }
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// Finds the closest opponent to the given (x, y) position.
-        /// </summary>
-        /// <param name="x">X position to find the closest opponent to.</param>
-        /// <param name="y">Y position to find the closest opponent to.</param>
-        /// <returns>The closest opponent player or null if no opponents are present.</returns>
         private SimPlayer FindClosestOpponent(int x, int y)
         {
             var ballHolder = GetBallHolder();
@@ -922,7 +823,93 @@ namespace FootballManager
         }
 
         // -------------------------------------------------------------
-        // Rendering Methods are in the separate partial class
+        // Added Missing Methods to Resolve Compilation Errors
         // -------------------------------------------------------------
+
+        /// <summary>
+        /// Checks if the given (x, y) position is within the pitch boundaries.
+        /// </summary>
+        private bool IsPositionWithinPitch(int x, int y)
+        {
+            return x >= pitchLeft && x <= pitchRight && y >= pitchTop && y <= pitchBottom;
+        }
+
+        /// <summary>
+        /// Handles half-time by pausing the game, displaying a message, switching attacking direction,
+        /// mirroring team positions, and resuming the game.
+        /// </summary>
+        private void HandleHalfTime()
+        {
+            isPaused = true;
+            Console.Clear();
+            Console.SetCursorPosition(50, 15);
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.WriteLine("=== HALF-TIME ===");
+            Console.SetCursorPosition(50, 17);
+            Console.WriteLine("Press any key to begin second half...");
+            Console.ResetColor();
+            Console.ReadKey(true);
+
+            SwitchAttackingDirection();
+            MirrorTeams();
+
+            isFirstHalf = false;
+            currentMinute = 45;
+            isPaused = false;
+        }
+
+        private void SwitchAttackingDirection()
+        {
+            isTeamAAttackingRight = !isTeamAAttackingRight;
+        }
+
+        private void MirrorTeams()
+        {
+            MirrorTeamPositions(teamAPlayers);
+            MirrorTeamPositions(teamBPlayers);
+        }
+
+        private void MirrorTeamPositions(List<SimPlayer> team)
+        {
+            int centerX = (pitchLeft + pitchRight) / 2;
+            foreach (var p in team)
+            {
+                int dx = p.XPosition - centerX;
+                p.XPosition = centerX - dx;
+            }
+        }
+
+        /// <summary>
+        /// Checks if a pass at the given (x, y) position can be intercepted by an opponent.
+        /// </summary>
+        private bool CheckInterception(int x, int y)
+        {
+            var ballHolder = GetBallHolder();
+            if (ballHolder == null)
+                return false;
+
+            var allies = teamAPlayers.Contains(ballHolder) ? teamAPlayers : teamBPlayers;
+            var opponents = (allies == teamAPlayers) ? teamBPlayers : teamAPlayers;
+
+            foreach (var opp in opponents)
+            {
+                if (!opp.IsGoalkeeper)
+                {
+                    int dx = opp.XPosition - x;
+                    int dy = opp.YPosition - y;
+                    double distance = Math.Sqrt(dx * dx + dy * dy);
+                    if (distance <= 2) // interception range
+                    {
+                        double interceptionChance = opp.SkillLevel * 0.5;
+                        if (randomGenerator.NextDouble() < interceptionChance)
+                        {
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            return false;
+        }
     }
 }

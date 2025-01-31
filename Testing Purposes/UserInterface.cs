@@ -12,7 +12,7 @@ namespace FootballManager
             {
                 var keyInfo = Console.ReadKey(true);
                 Input.Key = keyInfo.Key;
-                Input.KeyInfo = keyInfo; // Store the full key info
+                Input.KeyInfo = keyInfo;
             }
             else
             {

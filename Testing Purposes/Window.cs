@@ -23,6 +23,7 @@ namespace FootballManager
         protected Rectangle _rectangle;
         protected bool _visible;
         public InterfaceAction CurrentAction { get; set; }
+        private string cachedBorder;
 
         protected Window(string title, Rectangle rectangle, bool visible)
         {
@@ -30,11 +31,21 @@ namespace FootballManager
             _rectangle = rectangle;
             _visible = visible;
             CurrentAction = InterfaceAction.None;
+            BuildCachedBorder();
         }
 
+        private void BuildCachedBorder()
+        {
+            var top = "╔" + new string('═', _rectangle.Width - 2) + "╗";
+            var titleLine = "║" + _title.PadRight(_rectangle.Width - 2) + "║";
+            var separator = "╠" + new string('═', _rectangle.Width - 2) + "╣";
+            cachedBorder = top + "\n" + titleLine + "\n" + separator;
+        }
+
+        // Added virtual Update() method so derived classes can override it.
         public virtual void Update()
         {
-            // Base update method
+            // Empty base implementation.
         }
 
         public virtual void Draw(bool active)
@@ -42,14 +53,9 @@ namespace FootballManager
             if (!_visible)
                 return;
 
-            // Draw window borders and title with colors
-            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.ForegroundColor = ConsoleColor.White;
             Console.SetCursorPosition(_rectangle.X, _rectangle.Y);
-            Console.Write("╔" + new string('═', _rectangle.Width - 2) + "╗");
-            Console.SetCursorPosition(_rectangle.X, _rectangle.Y + 1);
-            Console.Write("║" + _title.PadRight(_rectangle.Width - 2) + "║");
-            Console.SetCursorPosition(_rectangle.X, _rectangle.Y + 2);
-            Console.Write("╠" + new string('═', _rectangle.Width - 2) + "╣");
+            Console.Write(cachedBorder);
             Console.ResetColor();
         }
 
