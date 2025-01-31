@@ -92,7 +92,7 @@ namespace FootballManager
             isTeamAAttackingRight = true;
 
             currentMinute = 0;
-            gameSpeed = 900; // 1..300 range
+            gameSpeed = 100; // 1..300 range
             teamAScore = 0;
             teamBScore = 0;
 
