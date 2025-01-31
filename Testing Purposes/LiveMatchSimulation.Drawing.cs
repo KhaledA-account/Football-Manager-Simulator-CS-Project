@@ -111,7 +111,7 @@ namespace FootballManager
                     PlaceChar(midfieldX + dx, centerY + dy, ' ', ConsoleColor.White, ConsoleColor.White);
                 }
             }
-            PlaceChar(midfieldX, centerY, ' ', ConsoleColor.Black, ConsoleColor.Black);
+            PlaceChar(midfieldX, centerY, ' ', ConsoleColor.Green, ConsoleColor.Green);
 
             DrawGoals(midfieldX, centerY);
             DrawPlayers(teamAPlayers, ConsoleColor.Magenta);

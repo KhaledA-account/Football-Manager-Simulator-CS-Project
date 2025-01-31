@@ -5,11 +5,11 @@ namespace FootballManager
 {
     public class Club
     {
-        public string Name { get; }
-        public List<Player> Players { get; }
-        public ClubLeagueStatistics Stats { get; }
+        public string Name { get; set; }
+        public List<Player> Players { get; set; }
+        public ClubLeagueStatistics Stats { get; set; }
 
-        // Added properties for finances
+        // Finances
         public double Balance { get; set; }
         public double WagesPaidThisWeek { get; set; }
         public double TotalTransfersOut { get; set; }
@@ -17,7 +17,7 @@ namespace FootballManager
         public double TotalProfit => TotalTransfersOut - TotalTransfersIn;
         public DateTime LastFinanceUpdateDate { get; set; }
 
-        // Added properties for formation and position assignments
+        // Formation & Positions
         public Formation SelectedFormation { get; set; }
         public Dictionary<int, Player> PositionAssignments { get; set; }
 
@@ -26,12 +26,11 @@ namespace FootballManager
             Name = name;
             Players = new List<Player>();
             Stats = new ClubLeagueStatistics();
-            LastFinanceUpdateDate = new DateTime(2024, 8, 17); // Starting date
+            Balance = 0.0;
             WagesPaidThisWeek = 0.0;
             TotalTransfersOut = 0.0;
             TotalTransfersIn = 0.0;
-            Balance = 0.0; // Default balance, can be set when loading
-            SelectedFormation = null; // Default to no formation selected
+            LastFinanceUpdateDate = DateTime.Now;
             PositionAssignments = new Dictionary<int, Player>();
         }
 
@@ -49,6 +48,7 @@ namespace FootballManager
         public int Points { get; set; }
         public int GoalsFor { get; set; }
         public int GoalsAgainst { get; set; }
+
         public int GoalDifference => GoalsFor - GoalsAgainst;
         public int Played => Wins + Draws + Losses;
 

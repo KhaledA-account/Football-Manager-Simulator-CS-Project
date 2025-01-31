@@ -124,7 +124,6 @@ namespace FootballManager
                     break;
             }
         }
-
         /// <summary>
         /// Called each time we simulate a day if isSimulating == true.
         /// This is where we handle daily events (transfers, listings, match days, etc.).
@@ -170,7 +169,7 @@ namespace FootballManager
 
             // Check for fixtures today
             var todaysFixtures = _league.Fixtures
-                .Where(f => f.Date == _currentDate && !f.Played)
+                .Where(f => f.Date.Date == _league.CurrentDate.Date && !f.Played)
                 .ToList();
 
             // Is user’s club playing today?
@@ -193,7 +192,7 @@ namespace FootballManager
 
                 if (input == ConsoleKey.Y)
                 {
-                    // Call the new NoNullFootballSimulation
+                    // Call the new LiveMatchSimulation class instead
                     Program.StartNoNullSimulation(userFixture, _league, _userClub);
                 }
                 else
@@ -206,7 +205,7 @@ namespace FootballManager
             // Auto-resolve all other fixtures not involving the user
             foreach (var fix in todaysFixtures)
             {
-                if (!fix.Played)
+                if (!fix.Played && fix != userFixture)
                 {
                     SimulateQuickMatch(fix);
                 }
@@ -426,6 +425,7 @@ namespace FootballManager
             int transferY = _rectangle.Y + 15;
 
             Console.SetCursorPosition(transferX, transferY);
+            Console.ForegroundColor = ConsoleColor.Cyan;
             Console.WriteLine("+------------------ Recent Transfers ------------------+");
             transferY++;
 
@@ -459,6 +459,7 @@ namespace FootballManager
             int listingY = _rectangle.Y + 25;
 
             Console.SetCursorPosition(listingX, listingY);
+            Console.ForegroundColor = ConsoleColor.Cyan;
             Console.WriteLine("+------------------ Recent Listings -------------------+");
             listingY++;
 
@@ -492,6 +493,7 @@ namespace FootballManager
             int financeY = _rectangle.Y + 4;
 
             Console.SetCursorPosition(financeX, financeY);
+            Console.ForegroundColor = ConsoleColor.Cyan;
             Console.WriteLine("+------------------- Finances -------------------+");
             financeY++;
             Console.SetCursorPosition(financeX, financeY);
@@ -516,6 +518,7 @@ namespace FootballManager
             int fixturesY = _rectangle.Y + 15;
 
             Console.SetCursorPosition(fixturesX, fixturesY);
+            Console.ForegroundColor = ConsoleColor.Cyan;
             Console.WriteLine("+--------- Recent & Upcoming Fixtures ----------+");
             fixturesY++;
 

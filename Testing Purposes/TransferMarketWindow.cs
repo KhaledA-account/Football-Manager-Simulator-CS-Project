@@ -107,16 +107,22 @@ namespace FootballManager
                 }
 
                 // Display player details with value in 'M'
-                Console.WriteLine($"{indexIndicator} {i + 1,-5} {player.Name,-18} {player.Age,-3} {player.Position,-4} {player.Rating,-7} £{player.Value}M  {player.CurrentClub.Name,-16} {player.SquadStatus}");
+                string playerInfo = $"{indexIndicator} {i + 1,-5} {player.Name,-18} {player.Age,-3} {player.Position,-4} {player.Rating,-7} £{player.Value}M  {player.CurrentClub.Name,-16} {player.SquadStatus}";
+                if (playerInfo.Length > _rectangle.Width - 4)
+                {
+                    playerInfo = playerInfo.Substring(0, _rectangle.Width - 7) + "...";
+                }
+
+                Console.WriteLine(playerInfo.PadRight(_rectangle.Width - 4));
+                y++;
 
                 Console.ResetColor();
-                y++;
             }
 
             if (_transferListedPlayers.Count == 0)
             {
                 Console.SetCursorPosition(x, y);
-                Console.WriteLine("No players are currently listed for transfer.");
+                Console.WriteLine("No players are currently listed for transfer.".PadRight(_rectangle.Width - 4));
             }
 
             // Instructions
@@ -135,9 +141,9 @@ namespace FootballManager
 
         private void RefreshTransferListedPlayers()
         {
-            // Include players from the user's club but prevent buying them
+            // Include players from all clubs except the user's club
             _transferListedPlayers = _league.GetAllPlayers()
-                .Where(p => p.AvailableForTransfer)
+                .Where(p => p.AvailableForTransfer && p.CurrentClub != _userClub)
                 .ToList();
 
             if (_selectedPlayerIndex >= _transferListedPlayers.Count)
@@ -242,8 +248,8 @@ namespace FootballManager
             }
             else
             {
-                Console.WriteLine("Invalid input. Defaulting to £50K per week.");
-                player.Wage = 50;
+                Console.WriteLine("Invalid input. Defaulting to £5K per week.");
+                player.Wage = 5.0;
             }
 
             Console.WriteLine("Contract details have been set.");

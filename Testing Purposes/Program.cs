@@ -32,9 +32,6 @@ namespace FootballManager
 
             League league = new League();
 
-            // Set the league's current date to the season start date
-            league.CurrentDate = league.SeasonStartDate;
-
             // Club selection
             int selectedClubIndex = 0;
             ConsoleKey key;
@@ -42,7 +39,7 @@ namespace FootballManager
             do
             {
                 Console.Clear();
-                Console.WriteLine("Select your club:");
+                Console.WriteLine("Select your club:\n");
 
                 for (int i = 0; i < league.Clubs.Count; i++)
                 {
@@ -81,8 +78,14 @@ namespace FootballManager
             TransferMarketWindow transferMarketWindow = new TransferMarketWindow(userClub, league, "Transfer Market", new Rectangle(0, 0, 120, 40), false);
             FixturesWindow fixturesWindow = new FixturesWindow(league, userClub, "Fixtures", new Rectangle(0, 0, 120, 40), false);
 
+            windows.Add(mainMenu);
+            windows.Add(leagueTableWindow);
+            windows.Add(squadManagementWindow);
+            windows.Add(playersWindow);
+            windows.Add(transferMarketWindow);
+            windows.Add(fixturesWindow);
+
             Window currentWindow = mainMenu;
-            windows.Add(currentWindow);
 
             while (true)
             {

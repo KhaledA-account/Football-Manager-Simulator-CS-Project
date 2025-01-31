@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 
 namespace FootballManager
@@ -34,6 +35,9 @@ namespace FootballManager
                     return;
                 }
             }
+
+            if (_userClub.Players.Count == 0)
+                return;
 
             if (_viewingPlayerDetails)
             {
@@ -115,6 +119,13 @@ namespace FootballManager
                 {
                     Console.WriteLine($"  {player.Name} ({player.Position}) - Rating: {player.Rating} - Transfer Listed: {(player.AvailableForTransfer ? "Yes" : "No")}");
                 }
+                y++;
+            }
+
+            if (_userClub.Players.Count == 0)
+            {
+                Console.SetCursorPosition(x, y);
+                Console.WriteLine("| No players available.".PadRight(_rectangle.Width - 2) + "|");
                 y++;
             }
         }

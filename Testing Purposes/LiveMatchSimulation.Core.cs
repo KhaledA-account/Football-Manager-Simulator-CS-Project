@@ -364,12 +364,6 @@ namespace FootballManager
 
         /// <summary>
         /// Updates the positions of players in a team based on BFS pathfinding towards the attacking direction.
-        /// </summary>
-        /// <param name="team">List of players in the team.</param>
-        /// <param name="occupied">2D array indicating occupied positions on the pitch.</param>
-        /// <param name="ballX">X position of the ball holder.</param>
-        /// <param name="ballY">Y position of the ball holder.</param>
-        /// <param name="attackingRight">Direction the team is attacking.</param>
         private void UpdateTeamPositions(
             List<SimPlayer> team,
             bool[,] occupied,
@@ -410,13 +404,6 @@ namespace FootballManager
 
         /// <summary>
         /// Finds the shortest path from (startX, startY) to (targetX, targetY) using BFS.
-        /// </summary>
-        /// <param name="startX">Starting X position.</param>
-        /// <param name="startY">Starting Y position.</param>
-        /// <param name="targetX">Target X position.</param>
-        /// <param name="targetY">Target Y position.</param>
-        /// <param name="occupied">2D array indicating occupied positions on the pitch.</param>
-        /// <returns>List of positions representing the path from start to target. Empty if no path found.</returns>
         private List<(int x, int y)> FindPath(int startX, int startY, int targetX, int targetY, bool[,] occupied)
         {
             var path = new List<(int x, int y)>();
@@ -483,7 +470,6 @@ namespace FootballManager
         /// <summary>
         /// Attempts a tackle on the player holding the ball.
         /// </summary>
-        /// <param name="holder">The player currently holding the ball.</param>
         private void AttemptTackle(SimPlayer holder)
         {
             var allies = teamAPlayers.Contains(holder) ? teamAPlayers : teamBPlayers;
@@ -507,11 +493,8 @@ namespace FootballManager
                 }
             }
         }
-
-        /// <summary>
         /// Performs an action (pass, shot, dribble) for the player holding the ball.
         /// </summary>
-        /// <param name="player">The player holding the ball.</param>
         private void PerformPlayerAction(SimPlayer player)
         {
             int actionChance = randomGenerator.Next(100);
@@ -525,10 +508,6 @@ namespace FootballManager
             }
             // Else, the player dribbles (no action needed)
         }
-
-        /// <summary>
-        /// Attempts to pass the ball to a teammate.
-        /// </summary>
         /// <param name="passer">The player attempting to pass.</param>
         private void AttemptPass(SimPlayer passer)
         {
@@ -547,15 +526,7 @@ namespace FootballManager
                 AssignBallToPlayer(target);
             }
         }
-
-        /// <summary>
         /// Animates the pass between two players and checks for interception.
-        /// </summary>
-        /// <param name="sx">Start X position.</param>
-        /// <param name="sy">Start Y position.</param>
-        /// <param name="ex">End X position.</param>
-        /// <param name="ey">End Y position.</param>
-        /// <param name="isStolen">Outputs whether the pass was stolen.</param>
         private void AnimatePass(int sx, int sy, int ex, int ey, out bool isStolen)
         {
             isStolen = false;
@@ -595,11 +566,7 @@ namespace FootballManager
                 Thread.Sleep(sleepTime);
             }
         }
-
-        /// <summary>
         /// Attempts to take a shot on goal with a chance to score.
-        /// </summary>
-        /// <param name="shooter">The player attempting the shot.</param>
         private void AttemptShot(SimPlayer shooter)
         {
             // Remove the ball from all players during the shot
@@ -866,10 +833,7 @@ namespace FootballManager
 
             return closestPlayer;
         }
-
-        /// <summary>
         /// Calculates the Euclidean distance between two points.
-        /// </summary>
         private double CalculateDistance(int x1, int y1, int x2, int y2)
         {
             return Math.Sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2));

@@ -36,10 +36,15 @@ namespace FootballManager
             Rating = rating;
             Potential = potential;
             CurrentClub = currentClub;
-            Age = 0;
-            Statistics = new Dictionary<string, int>();
-            Wage = 0.0;
-            ContractLength = 0;
+            Age = 18; // Default age, can be set later
+            Statistics = new Dictionary<string, int>
+            {
+                { "Goals", 0 },
+                { "Assists", 0 },
+                { "Appearances", 0 }
+            };
+            Wage = 5.0; // Fixed at £5K per week
+            ContractLength = 3; // Default contract length
             SquadStatus = "First Team Member";
             AvailableForTransfer = false;
             TransferPrice = 0.0;
